@@ -123,6 +123,11 @@ func TestCommonTableExpressions(t *testing.T) {
 			in: "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte",
 			out: "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
 		},
+		{
+			name: "recursive common table expressions with aliases",
+			in: "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte AS test",
+			out: "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
+		},
 	} {
 		t.Run("", func(t *testing.T) {
 			oq, err := NewObfuscator(nil).ObfuscateSQLString(tt.in)

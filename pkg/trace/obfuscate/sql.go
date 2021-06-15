@@ -90,13 +90,15 @@ func (f *discardFilter) Filter(token, lastToken TokenKind, buffer []byte) (Token
 			f.isCTE = false
 		}
 	case ')':
-		// seeing ')' marks the end of the common table expression SELECT
-		// unless there is a ',' which indicates a second CTE at the same
-		// level as the original WITH
-		if token == ',' {
-			return CommonTableExpressionPersistedToken, buffer, nil // a way for the comma to not be dropped, that's a hack and half.
+		if f.isInCommonExpression {
+			// seeing ')' marks the end of the common table expression SELECT
+			// unless there is a ',' which indicates a second CTE at the same
+			// level as the original WITH
+			if token == ',' {
+				return CommonTableExpressionPersistedToken, buffer, nil // a way for the comma to not be dropped, that's a hack and half.
+			}
+			f.Reset()
 		}
-		f.Reset()
 	}
 	switch token {
 	case Comment, ';':
