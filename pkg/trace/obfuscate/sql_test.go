@@ -87,57 +87,75 @@ func TestKeepSQLAlias(t *testing.T) {
 // taken from https://dev.mysql.com/doc/refman/8.0/en/with.html
 func TestCommonTableExpressions(t *testing.T) {
 	assert := assert.New(t)
-	for _, tt := range []struct{ name, in, out string }{
+	testCases := []struct{ name, in, out, withAlias string }{
 		{
 			name: "single common table expression",
-			in: "WITH x AS (SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = 5) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
-			out: "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			in:   "WITH x AS (SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = 5) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			out:  "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
 		},
 		{
-			name: "single common table expression with aliases",
-			in: "WITH x AS (SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = 5) SELECT host_id AS host, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
-			out: "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			name:      "single common table expression with alias",
+			in:        "WITH x AS (SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = 5) SELECT host_id AS host, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			out:       "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			withAlias: "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id AS host, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+		},
+		{
+			name: "single common table expression with many aliases",
+			in: "WITH OrdCount AS (  SELECT YEAR(orderdate) AS orderyear, COUNT(*) AS numorders  FROM Sales.Orders  GROUP BY YEAR(orderdate)) SELECT CUR.orderyear, CUR.numorders,  CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR  LEFT OUTER JOIN OrdCount AS PRV    ON CUR.orderyear = PRV.orderyear + 1",
+			out: "WITH OrdCount AS ( SELECT YEAR ( orderdate ) AS orderyear, COUNT ( * ) AS numorders FROM Sales.Orders GROUP BY YEAR ( orderdate ) ) SELECT CUR.orderyear, CUR.numorders, CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR LEFT OUTER JOIN OrdCount AS PRV ON CUR.orderyear = PRV.orderyear + ?",
+			withAlias: "WITH OrdCount AS ( SELECT YEAR( orderdate ) AS orderyear, COUNT ( * ) AS numorders FROM Sales.Orders GROUP BY YEAR ( orderdate ) ) SELECT CUR.orderyear, CUR.numorders, CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR LEFT OUTER JOIN OrdCount AS PRV ON CUR.orderyear = PRV.orderyear + ?",
 		},
 		{
 			name: "multiple common table expressions with multi-line WITH",
-			in: "WITH cte1 AS (SELECT 1) SELECT * FROM (WITH cte2 AS (SELECT 2) SELECT * FROM cte2 JOIN cte1)",
-			out: "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 )",
+			in:   "WITH cte1 AS (SELECT 1) SELECT * FROM (WITH cte2 AS (SELECT 2) SELECT * FROM cte2 JOIN cte1)",
+			out:  "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 )",
 		},
 		{
-			name: "multiple common table expressions with multi-line WITH and aliases",
-			in: "WITH cte1 AS (SELECT 1) SELECT * FROM (WITH cte2 AS (SELECT 2) SELECT * FROM cte2 JOIN cte1) AS dt",
-			out: "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 )",
+			name:      "multiple common table expressions with multi-line WITH and aliases",
+			in:        "WITH cte1 AS (SELECT 1) SELECT * FROM (WITH cte2 AS (SELECT 2) SELECT * FROM cte2 JOIN cte1) AS dt",
+			out:       "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 )",
+			withAlias: "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 ) AS dt",
 		},
 		{
 			name: "multiple common table expressions with single WITH",
-			in: "WITH cte1 AS (SELECT 1), cte2 AS (SELECT 2) SELECT * FROM cte1 UNION SELECT * FROM cte2",
-			out: "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+			in:   "WITH cte1 AS (SELECT 1), cte2 AS (SELECT 2) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+			out:  "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2",
 		},
 		{
-			name: "multiple common table expressions with single WITH and aliases",
-			in: "WITH cte1 AS (SELECT 1), cte2 AS (SELECT 2) SELECT * FROM cte1 UNION SELECT * FROM cte2 AS test",
-			out: "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+			name:      "multiple common table expressions with single WITH and aliases",
+			in:        "WITH cte1 AS (SELECT 1), cte2 AS (SELECT 2) SELECT * FROM cte1 UNION SELECT * FROM cte2 AS test",
+			out:       "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+			withAlias: "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2 AS test",
 		},
 		{
 			name: "recursive common table expressions",
-			in: "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte",
-			out: "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
+			in:   "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte",
+			out:  "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
 		},
 		{
-			name: "recursive common table expressions with aliases",
-			in: "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte AS test",
-			out: "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
+			name:      "recursive common table expressions with aliases",
+			in:        "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte AS test",
+			out:       "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
+			withAlias: "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte AS test",
 		},
-	} {
-		t.Run("", func(t *testing.T) {
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
 			oq, err := NewObfuscator(nil).ObfuscateSQLString(tt.in)
 			assert.NoError(err)
 			assert.Equal(tt.out, oq.Query)
 		})
+
+		if tt.withAlias != "" {
+			t.Run(tt.name+" sql alias ON", func(t *testing.T) {
+				defer testutil.WithFeatures("keep_sql_alias")()
+				oq, err := NewObfuscator(nil).ObfuscateSQLString(tt.in)
+				assert.NoError(err)
+				assert.Equal(tt.withAlias, oq.Query)
+			})
+		}
 	}
-
-	// TODO: add similar test cases for keeping sql alias enabled !
-
 }
 
 func TestDollarQuotedFunc(t *testing.T) {

@@ -60,6 +60,8 @@ const (
 	With
 	From
 	Update
+	Select
+	Delete
 	Insert
 	Into
 	Join
@@ -116,6 +118,8 @@ var tokenKindStrings = map[TokenKind]string{
 	With:                                "With",
 	From:                                "From",
 	Update:                              "Update",
+	Select:                              "Select",
+	Delete:                              "Delete",
 	Insert:                              "Insert",
 	Into:                                "Into",
 	Join:                                "Join",
