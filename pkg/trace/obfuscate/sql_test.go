@@ -102,8 +102,8 @@ func TestCommonTableExpressions(t *testing.T) {
 		{
 			name: "single common table expression with many aliases",
 			in: "WITH OrdCount AS (  SELECT YEAR(orderdate) AS orderyear, COUNT(*) AS numorders  FROM Sales.Orders  GROUP BY YEAR(orderdate)) SELECT CUR.orderyear, CUR.numorders,  CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR  LEFT OUTER JOIN OrdCount AS PRV    ON CUR.orderyear = PRV.orderyear + 1",
-			out: "WITH OrdCount AS ( SELECT YEAR ( orderdate ) AS orderyear, COUNT ( * ) AS numorders FROM Sales.Orders GROUP BY YEAR ( orderdate ) ) SELECT CUR.orderyear, CUR.numorders, CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR LEFT OUTER JOIN OrdCount AS PRV ON CUR.orderyear = PRV.orderyear + ?",
-			withAlias: "WITH OrdCount AS ( SELECT YEAR( orderdate ) AS orderyear, COUNT ( * ) AS numorders FROM Sales.Orders GROUP BY YEAR ( orderdate ) ) SELECT CUR.orderyear, CUR.numorders, CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR LEFT OUTER JOIN OrdCount AS PRV ON CUR.orderyear = PRV.orderyear + ?",
+			out: "WITH OrdCount AS ( SELECT YEAR ( orderdate ) AS orderyear, COUNT ( * ) AS numorders FROM Sales.Orders GROUP BY YEAR ( orderdate ) ) SELECT CUR.orderyear, CUR.numorders, CUR.numorders - PRV.numorders FROM OrdCount LEFT OUTER JOIN OrdCount ON CUR.orderyear = PRV.orderyear + ?",
+			withAlias: "WITH OrdCount AS ( SELECT YEAR ( orderdate ) AS orderyear, COUNT ( * ) AS numorders FROM Sales.Orders GROUP BY YEAR ( orderdate ) ) SELECT CUR.orderyear, CUR.numorders, CUR.numorders - PRV.numorders AS diff FROM OrdCount AS CUR LEFT OUTER JOIN OrdCount AS PRV ON CUR.orderyear = PRV.orderyear + ?",
 		},
 		{
 			name: "multiple common table expressions with multi-line WITH",

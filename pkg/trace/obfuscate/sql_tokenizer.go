@@ -186,6 +186,8 @@ var keywords = map[string]TokenKind{
 	"WITH":      With,
 	"FROM":      From,
 	"UPDATE":    Update,
+	"SELECT":    Select,
+	"DELETE":    Delete,
 	"INSERT":    Insert,
 	"INTO":      Into,
 	"JOIN":      Join,
