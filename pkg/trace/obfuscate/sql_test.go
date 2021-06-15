@@ -83,6 +83,58 @@ func TestKeepSQLAlias(t *testing.T) {
 	})
 }
 
+// Test support for WITH clauses (Common Table Expressions)
+// taken from https://dev.mysql.com/doc/refman/8.0/en/with.html
+func TestCommonTableExpressions(t *testing.T) {
+	assert := assert.New(t)
+	for _, tt := range []struct{ name, in, out string }{
+		{
+			name: "single common table expression",
+			in: "WITH x AS (SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = 5) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			out: "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+		},
+		{
+			name: "single common table expression with aliases",
+			in: "WITH x AS (SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = 5) SELECT host_id AS host, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+			out: "WITH x AS ( SELECT host_id, source_type_id, tags FROM vs13995.host_tags WHERE host_id = ? ) SELECT host_id, source_type_id, tags FROM x ORDER BY host_id, source_type_id",
+		},
+		{
+			name: "multiple common table expressions with multi-line WITH",
+			in: "WITH cte1 AS (SELECT 1) SELECT * FROM (WITH cte2 AS (SELECT 2) SELECT * FROM cte2 JOIN cte1)",
+			out: "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 )",
+		},
+		{
+			name: "multiple common table expressions with multi-line WITH and aliases",
+			in: "WITH cte1 AS (SELECT 1) SELECT * FROM (WITH cte2 AS (SELECT 2) SELECT * FROM cte2 JOIN cte1) AS dt",
+			out: "WITH cte1 AS ( SELECT ? ) SELECT * FROM ( WITH cte2 AS ( SELECT ? ) SELECT * FROM cte2 JOIN cte1 )",
+		},
+		{
+			name: "multiple common table expressions with single WITH",
+			in: "WITH cte1 AS (SELECT 1), cte2 AS (SELECT 2) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+			out: "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+		},
+		{
+			name: "multiple common table expressions with single WITH and aliases",
+			in: "WITH cte1 AS (SELECT 1), cte2 AS (SELECT 2) SELECT * FROM cte1 UNION SELECT * FROM cte2 AS test",
+			out: "WITH cte1 AS ( SELECT ? ) , cte2 AS ( SELECT ? ) SELECT * FROM cte1 UNION SELECT * FROM cte2",
+		},
+		{
+			name: "recursive common table expressions",
+			in: "WITH RECURSIVE cte (n) AS (SELECT 1 UNION ALL  SELECT n + 1 FROM cte WHERE n < 5) SELECT * FROM cte",
+			out: "WITH RECURSIVE cte ( n ) AS ( SELECT ? UNION ALL SELECT n + ? FROM cte WHERE n < ? ) SELECT * FROM cte",
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			oq, err := NewObfuscator(nil).ObfuscateSQLString(tt.in)
+			assert.NoError(err)
+			assert.Equal(tt.out, oq.Query)
+		})
+	}
+
+	// TODO: add similar test cases for keeping sql alias enabled !
+
+}
+
 func TestDollarQuotedFunc(t *testing.T) {
 	q := `SELECT $func$INSERT INTO table VALUES ('a', 1, 2)$func$ FROM users`
 
@@ -1391,8 +1443,8 @@ func BenchmarkQueryCacheTippingPoint(b *testing.B) {
 
 	bench1KQueries := func(
 		fn func(*Obfuscator, string) (*ObfuscatedQuery, error), // obfuscating function
-		hitrate float64, // desired cache hit rate
-		queryfmt string, // actual query (passed to fmt.Sprintf)
+		hitrate float64,                                        // desired cache hit rate
+		queryfmt string,                                        // actual query (passed to fmt.Sprintf)
 	) func(*testing.B) {
 		if hitrate < 0 || hitrate > 1 {
 			b.Fatalf("invalid hit rate %.2f", hitrate)

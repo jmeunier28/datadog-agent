@@ -57,6 +57,7 @@ const (
 	GE
 	NE
 	As
+	With
 	From
 	Update
 	Insert
@@ -84,42 +85,47 @@ const (
 	// a bracketed identifier (MSSQL).
 	// See issue https://github.com/DataDog/datadog-trace-agent/issues/475.
 	FilteredBracketedIdentifier
+
+	// TODO: add godoc about this ... a way to perserve commas blargh
+	CommonTableExpressionPersistedToken
 )
 
 var tokenKindStrings = map[TokenKind]string{
-	LexError:                     "LexError",
-	ID:                           "ID",
-	Limit:                        "Limit",
-	Null:                         "Null",
-	String:                       "String",
-	DoubleQuotedString:           "DoubleQuotedString",
-	DollarQuotedString:           "DollarQuotedString",
-	DollarQuotedFunc:             "DollarQuotedFunc",
-	Number:                       "Number",
-	BooleanLiteral:               "BooleanLiteral",
-	ValueArg:                     "ValueArg",
-	ListArg:                      "ListArg",
-	Comment:                      "Comment",
-	Variable:                     "Variable",
-	Savepoint:                    "Savepoint",
-	PreparedStatement:            "PreparedStatement",
-	EscapeSequence:               "EscapeSequence",
-	NullSafeEqual:                "NullSafeEqual",
-	LE:                           "LE",
-	GE:                           "GE",
-	NE:                           "NE",
-	As:                           "As",
-	From:                         "From",
-	Update:                       "Update",
-	Insert:                       "Insert",
-	Into:                         "Into",
-	Join:                         "Join",
-	TableName:                    "TableName",
-	ColonCast:                    "ColonCast",
-	FilteredGroupable:            "FilteredGroupable",
-	FilteredGroupableParenthesis: "FilteredGroupableParenthesis",
-	Filtered:                     "Filtered",
-	FilteredBracketedIdentifier:  "FilteredBracketedIdentifier",
+	LexError:                            "LexError",
+	ID:                                  "ID",
+	Limit:                               "Limit",
+	Null:                                "Null",
+	String:                              "String",
+	DoubleQuotedString:                  "DoubleQuotedString",
+	DollarQuotedString:                  "DollarQuotedString",
+	DollarQuotedFunc:                    "DollarQuotedFunc",
+	Number:                              "Number",
+	BooleanLiteral:                      "BooleanLiteral",
+	ValueArg:                            "ValueArg",
+	ListArg:                             "ListArg",
+	Comment:                             "Comment",
+	Variable:                            "Variable",
+	Savepoint:                           "Savepoint",
+	PreparedStatement:                   "PreparedStatement",
+	EscapeSequence:                      "EscapeSequence",
+	NullSafeEqual:                       "NullSafeEqual",
+	LE:                                  "LE",
+	GE:                                  "GE",
+	NE:                                  "NE",
+	As:                                  "As",
+	With:                                "With",
+	From:                                "From",
+	Update:                              "Update",
+	Insert:                              "Insert",
+	Into:                                "Into",
+	Join:                                "Join",
+	TableName:                           "TableName",
+	ColonCast:                           "ColonCast",
+	FilteredGroupable:                   "FilteredGroupable",
+	FilteredGroupableParenthesis:        "FilteredGroupableParenthesis",
+	Filtered:                            "Filtered",
+	FilteredBracketedIdentifier:         "FilteredBracketedIdentifier",
+	CommonTableExpressionPersistedToken: "CommonTableExpressionPersistedToken",
 }
 
 func (k TokenKind) String() string {
@@ -173,6 +179,7 @@ var keywords = map[string]TokenKind{
 	"SAVEPOINT": Savepoint,
 	"LIMIT":     Limit,
 	"AS":        As,
+	"WITH":      With,
 	"FROM":      From,
 	"UPDATE":    Update,
 	"INSERT":    Insert,

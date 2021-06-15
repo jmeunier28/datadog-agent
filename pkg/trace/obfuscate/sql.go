@@ -45,7 +45,10 @@ type tokenFilter interface {
 
 // discardFilter is a token filter which discards certain elements from a query, such as
 // comments and AS aliases by returning a nil buffer.
-type discardFilter struct{}
+type discardFilter struct {
+	isCTE                bool
+	isInCommonExpression bool
+}
 
 // Filter the given token so that a `nil` slice is returned if the token is in the token filtered list.
 func (f *discardFilter) Filter(token, lastToken TokenKind, buffer []byte) (TokenKind, []byte, error) {
@@ -69,19 +72,42 @@ func (f *discardFilter) Filter(token, lastToken TokenKind, buffer []byte) (Token
 			// closing bracket counter-part. See GitHub issue DataDog/datadog-trace-agent#475.
 			return FilteredBracketedIdentifier, nil, nil
 		}
-		if config.HasFeature("keep_sql_alias") {
+		if token == '(' && f.isCTE {
+			// this is the start of a CTE SELECT, which shouldn't end until we see a ')'
+			f.isInCommonExpression = true
+			return token, buffer, nil
+		}
+
+		if config.HasFeature("keep_sql_alias") || f.isCTE {
 			return token, buffer, nil
 		}
 		return Filtered, nil, nil
+	case With:
+		if token == '(' {
+			// if the last token was a WITH clause we expect this to be the
+			// beginning of a common table expression, but it's possible its just a table hint
+			// e.g. WITH ( NOLOCK ) in which case we should not count this as a CTE.
+			f.isCTE = false
+		}
+	case ')':
+		// seeing ')' marks the end of the common table expression SELECT
+		// unless there is a ',' which indicates a second CTE at the same
+		// level as the original WITH
+		if token == ',' {
+			return CommonTableExpressionPersistedToken, buffer, nil // a way for the comma to not be dropped, that's a hack and half.
+		}
+		f.Reset()
 	}
-
-	// filters based on the current token; if the next token should be ignored,
-	// return the same token value (not FilteredGroupable) and nil
 	switch token {
 	case Comment, ';':
 		return markFilteredGroupable(token), nil, nil
+	case With:
+		// if we see a WITH clause assume this is the
+		//beginning of a common table expression
+		f.isCTE = true
+		fallthrough
 	case As:
-		if !config.HasFeature("keep_sql_alias") {
+		if !config.HasFeature("keep_sql_alias") && !f.isCTE {
 			return As, nil, nil
 		}
 		fallthrough
@@ -91,7 +117,10 @@ func (f *discardFilter) Filter(token, lastToken TokenKind, buffer []byte) (Token
 }
 
 // Reset implements tokenFilter.
-func (f *discardFilter) Reset() {}
+func (f *discardFilter) Reset() {
+	f.isCTE = false
+	f.isInCommonExpression = false
+}
 
 // replaceFilter is a token filter which obfuscates strings and numbers in queries by replacing them
 // with the "?" character.
