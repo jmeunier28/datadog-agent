@@ -53,19 +53,18 @@ require (
 	github.com/DataDog/datadog-operator v0.5.0-rc.2.0.20210402083916-25ba9a22e67a
 	github.com/DataDog/ebpf v0.0.0-20210419131141-ea64821c9793
 	github.com/DataDog/gohai v0.0.0-20210303102637-6b668acb50dd
-	github.com/DataDog/gopsutil v0.0.0-20200624212600-1b53412ef321
+	github.com/DataDog/gopsutil v0.0.0-20211112180027-9aa392ae181a
 	github.com/DataDog/mmh3 v0.0.0-20200316233529-f5b682d8c981 // indirect
-	github.com/DataDog/nikos v1.0.0
+	github.com/DataDog/nikos v1.7.5
 	github.com/DataDog/sketches-go v1.1.0
 	github.com/DataDog/viper v1.9.0
 	github.com/DataDog/watermarkpodautoscaler v0.2.1-0.20210323121426-cfb2caa5613f
-	github.com/DataDog/zstd v1.4.8
+	github.com/DataDog/zstd v1.5.0
 	github.com/DataDog/zstd_0 v0.0.0-20210310093942-586c1286621f
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/go-winio v0.4.17-0.20210211115548-6eac466e5fa3
-	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/alecthomas/participle v0.7.1
 	github.com/alecthomas/repr v0.0.0-20181024024818-d37bc2a10ba1
 	github.com/andybalholm/brotli v1.0.1 // indirect
@@ -95,7 +94,7 @@ require (
 	github.com/fatih/structtag v1.2.0
 	github.com/florianl/go-conntrack v0.1.1-0.20191002182014-06743d3a59db
 	github.com/freddierice/go-losetup v0.0.0-20170407175016-fc9adea44124
-	github.com/go-ini/ini v1.62.0
+	github.com/go-ini/ini v1.63.2
 	github.com/go-ole/go-ole v1.2.5
 	github.com/go-openapi/spec v0.20.3
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
@@ -175,7 +174,7 @@ require (
 	golang.org/x/mobile v0.0.0-20201217150744-e6ae53a27f4f
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210601080250-7ecdf8ef093b
+	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf
 	golang.org/x/text v0.3.6
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	golang.org/x/tools v0.1.5
